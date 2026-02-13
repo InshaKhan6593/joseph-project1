@@ -1,0 +1,21 @@
+=== PART 1: COPY TO "Dashboard" SHEET MODULE ===
+' Instructions:
+' 1. In VBA Editor (Alt+F11), double-click "Dashboard" in the Project Explorer (left pane).
+' 2. Paste the code below into the main window.
+
+Private Sub Worksheet_SelectionChange(ByVal Target As Range)
+    On Error Resume Next
+    modDashboard.HandleDashboardClick Target
+End Sub
+
+
+=== PART 2: COPY TO "ThisWorkbook" MODULE ===
+' Instructions:
+' 1. In VBA Editor, double-click "ThisWorkbook" in the Project Explorer.
+' 2. Paste the code below.
+
+Private Sub Workbook_Open()
+    On Error Resume Next
+    modDashboard.RefreshDashboard
+    modDashboard.NavigateTo "Dashboard"
+End Sub
