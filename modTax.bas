@@ -11,13 +11,24 @@ Option Explicit
 ' --------------------------------------------------------------------------
 Public Function GetTaxRate() As Double
     On Error GoTo ErrHandler
-    Dim ws As Worksheet
-    Set ws = SafeSheetRef("Settings")
-    Dim jurisdiction As String
-    jurisdiction = LCase(CStr(ws.Range("B11").Value))
     
+    ' Get Jurisdiction from Named Range
+    Dim jurisdiction As String
+    On Error Resume Next
+    jurisdiction = LCase(CStr(ThisWorkbook.Names("rngJurisdiction").RefersToRange.Value))
+    On Error GoTo ErrHandler
+    
+    ' Get Tax Table from Named Range
     Dim rngTable As Range
-    Set rngTable = ws.Range("A16:E24")
+    On Error Resume Next
+    Set rngTable = ThisWorkbook.Names("rngTaxTable").RefersToRange
+    On Error GoTo ErrHandler
+    
+    ' Fallback if ranges missing (e.g. before build)
+    If rngTable Is Nothing Then
+        GetTaxRate = 0.16
+        Exit Function
+    End If
     
     Dim i As Long
     For i = 1 To rngTable.Rows.Count

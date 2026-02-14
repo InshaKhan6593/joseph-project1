@@ -62,7 +62,7 @@ Public Function GetSetting(settingName As String) As String
     Dim i As Long
     For i = 1 To lastRow
         If LCase(Trim(CStr(ws.Cells(i, 1).Value))) = LCase(Trim(settingName)) Then
-            GetSetting = CStr(ws.Cells(i, 2).Value)
+            GetSetting = Trim(CStr(ws.Cells(i, 2).Value))
             Exit Function
         End If
     Next i

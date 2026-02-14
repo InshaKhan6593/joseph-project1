@@ -65,6 +65,9 @@ Public Sub BuildCompleteWorkbook()
     stepName = "ProtectAllSheets"
     ProtectAllSheets
 
+    stepName = "InjectSheetCode"
+    InjectSheetCode
+
     stepName = "FinalSetup"
     FinalSetup
 
@@ -161,6 +164,7 @@ Private Sub BuildSettingsSheet()
         On Error GoTo 0
 
         .Range("A12").Value = "Currency Symbol"
+        .Range("B12").NumberFormat = "@"
         .Range("B12").Value = "KES"
 
         ' Section C: Tax Rates
@@ -198,6 +202,9 @@ Private Sub BuildSettingsSheet()
             .Cells(16 + row, 4).Value = taxData(row)(3)
             .Cells(16 + row, 5).Value = taxData(row)(4)
         Next row
+        
+        ' Format Tax Rates as Percentage
+        .Range("C16:C24").NumberFormat = "0.00%"
 
         ' Section D: Auto-Numbering Counters
         .Range("A25:D25").Merge
@@ -226,25 +233,27 @@ Private Sub BuildSettingsSheet()
         Next i
 
         ' Section F: Default Terms
-        .Range("A40:D40").Merge
-        .Range("A40").Value = "DEFAULT TERMS"
-        FormatHeader .Range("A40")
+        .Range("A45:D45").Merge
+        .Range("A45").Value = "DEFAULT TERMS"
+        FormatHeader .Range("A45")
 
-        .Range("A41").Value = "Payment Terms"
-        .Range("B41").Value = "Net 30"
+        .Range("A46").Value = "Payment Terms"
+        .Range("B46").Value = "Net 30"
         On Error Resume Next
-        .Range("B41").Validation.Delete
-        .Range("B41").Validation.Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:="Due on Receipt,Net 15,Net 30,Net 60,Net 90"
+        .Range("B46").Validation.Delete
+        .Range("B46").Validation.Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:="Due on Receipt,Net 15,Net 30,Net 60,Net 90"
         On Error GoTo 0
 
-        .Range("A42").Value = "Default Discount %"
-        .Range("B42").Value = 0
+        .Range("A47").Value = "Default Discount %"
+        .Range("B47").Value = 0
+        .Range("B47").NumberFormat = "0.00%"
 
-        .Range("A43").Value = "PDF Save Path"
-        .Range("B43").Value = "C:\BillingSystem\"
+        .Range("A48").Value = "PDF Save Path"
+        .Range("B48").Value = "C:\BillingSystem\"
 
-        .Range("A44").Value = "Last Updated"
-        .Range("B44").Formula = "=TODAY()"
+        .Range("A49").Value = "Last Updated"
+        .Range("B49").Formula = "=TODAY()"
+        .Range("B49").NumberFormat = "dd-mmm-yyyy"
 
         ' Column widths
         .Columns("A:A").ColumnWidth = 20
@@ -294,6 +303,11 @@ Private Sub BuildCustomersSheet()
                 .Cells(2 + row, 1 + col).Value = custData(row)(col)
             Next col
         Next row
+
+        ' Format IDs, Phones, Tax IDs, Credit Terms as Text
+        .Columns("A:A").NumberFormat = "@" ' Cust_ID
+        .Columns("E:E").NumberFormat = "@" ' Phone
+        .Columns("I:J").NumberFormat = "@" ' Tax ID, Credit Terms
 
         ' Format as table
         Dim tbl As ListObject
@@ -377,6 +391,11 @@ Private Sub BuildProductsSheet()
             Next col
         Next row
 
+        ' Format SKU, Category, Status as Text
+        .Columns("A:A").NumberFormat = "@" ' SKU
+        .Columns("D:D").NumberFormat = "@" ' Category
+        .Columns("H:H").NumberFormat = "@" ' Status
+
         ' Format as table
         Dim tbl As ListObject
         Set tbl = .ListObjects.Add(xlSrcRange, .Range("A1:H21"), , xlYes)
@@ -395,7 +414,8 @@ Private Sub BuildProductsSheet()
 
         ' Number format for price
         ' Number format for price
-        .Columns("E:E").NumberFormat = "#,##0.00"
+        ' Number format for price
+        .Columns("E:E").NumberFormat = "[$KES] #,##0.00"
         .Columns("C:C").WrapText = True ' Description column wrap
 
         ' Freeze panes - activate sheet first
@@ -449,8 +469,10 @@ Private Sub BuildTransactionsSheet()
         .Columns("O:O").WrapText = True ' Notes column wrap
 
         ' Number formats
-        .Columns("F:K").NumberFormat = "#,##0.00"
+        .Columns("F:K").NumberFormat = "[$KES] #,##0.00"
+        .Columns("N:N").NumberFormat = "0.00%" ' Tax Rate
         .Columns("D:E").NumberFormat = "dd-mmm-yyyy"
+        .Columns("A:B").NumberFormat = "@" ' Invoice No, Cust_ID
 
         ' Freeze panes - activate sheet first
         On Error Resume Next
@@ -501,8 +523,9 @@ Private Sub BuildPaymentLogSheet()
         .Columns("I:I").ColumnWidth = 25
 
         ' Number formats
-        .Columns("E:E").NumberFormat = "#,##0.00"
+        .Columns("E:E").NumberFormat = "[$KES] #,##0.00"
         .Columns("D:D").NumberFormat = "dd-mmm-yyyy"
+        .Columns("A:C").NumberFormat = "@" ' Payment ID, Invoice No, Cust_ID
 
         ' Freeze panes - activate sheet first
         On Error Resume Next
@@ -531,19 +554,20 @@ Private Sub BuildInvoiceTemplate()
         On Error GoTo 0
 
         ' Company header placeholder (rows 1-4)
-        .Range("A1:C4").Merge
+        ' Company header placeholder (rows 1-5 for more space)
+        .Range("A1:C5").Merge
         .Range("A1").Value = "[LOGO]"
         .Range("A1").HorizontalAlignment = xlCenter
         .Range("A1").VerticalAlignment = xlCenter
-        .Range("A1").Interior.Color = RGB(220, 220, 220)
+        .Range("A1").Interior.ColorIndex = xlNone ' Transparent background
 
-        .Range("D1").Value = "=Settings!B2"
+        .Range("D1").Formula = "=IF(Settings!B2="""","""",Settings!B2)"
         .Range("D1").Font.Size = 18
         .Range("D1").Font.Bold = True
 
-        .Range("D2").Value = "=Settings!B3 & "" "" & Settings!B4"
-        .Range("D3").Value = "=Settings!B5 & "" | "" & Settings!B6"
-        .Range("D4").Value = "=Settings!B7"
+        .Range("D2").Formula = "=IF(AND(Settings!B3="""",Settings!B4=""""),"""",Settings!B3 & "" "" & Settings!B4)"
+        .Range("D3").Formula = "=IF(AND(Settings!B5="""",Settings!B6=""""),"""",Settings!B5 & "" | "" & Settings!B6)"
+        .Range("D4").Formula = "=IF(Settings!B7="""","""",Settings!B7)"
 
         ' Document title (row 6)
         .Range("A6:H6").Merge
@@ -564,6 +588,9 @@ Private Sub BuildInvoiceTemplate()
         .Range("A10").Value = "Due Date:"
         .Range("A11").Value = "Terms:"
         .Range("A8:A11").Font.Bold = True
+        
+        ' Date formats
+        .Range("B9:B10").NumberFormat = "dd-mmm-yyyy"
 
         ' Customer info (right side, rows 8-11)
         .Range("E8").Value = "BILL TO:"
@@ -589,9 +616,11 @@ Private Sub BuildInvoiceTemplate()
         Dim row As Long
         For row = 15 To 29
             .Cells(row, 1).Value = row - 14  ' Row number
-            ' Formula for line total in column H
+             ' Formula for line total in column H
             .Cells(row, 8).Formula = "=IF(D" & row & "="""","""",D" & row & "*E" & row & "*(1-F" & row & "/100))"
-            .Cells(row, 8).NumberFormat = "#,##0.00"
+            .Cells(row, 8).NumberFormat = "[$KES] #,##0.00"
+            .Cells(row, 6).NumberFormat = "0.00" ' Discount number (not %)
+            .Cells(row, 5).NumberFormat = "[$KES] #,##0.00" ' Unit Price
         Next row
 
         ' Alternating row colors
@@ -608,25 +637,27 @@ Private Sub BuildInvoiceTemplate()
 
         ' Totals section (rows 31-35)
         .Range("G31").Value = "Subtotal"
-        .Range("H31").Formula = "=SUM(H15:H29)"
-        .Range("H31").NumberFormat = "#,##0.00"
+        .Range("G31").Value = "Subtotal"
+        .Range("H31").Formula = "=IF(SUM(H15:H29)=0,"""",SUM(H15:H29))"
+        .Range("H31").NumberFormat = "[$KES] #,##0.00"
 
         .Range("G32").Value = "Discount"
         .Range("H32").Value = 0
-        .Range("H32").NumberFormat = "#,##0.00"
+        .Range("H32").NumberFormat = "[$KES] #,##0.00"
 
         .Range("G33").Value = "Tax (VAT/Sales Tax)"
         .Range("H33").Value = 0
-        .Range("H33").NumberFormat = "#,##0.00"
+        .Range("H33").NumberFormat = "[$KES] #,##0.00"
 
         .Range("G35").Value = "GRAND TOTAL"
-        .Range("H35").Formula = "=H31-H32+H33"
+        .Range("G35").Value = "GRAND TOTAL"
+        .Range("H35").Formula = "=IF(N(H31)-H32+H33=0,"""",N(H31)-H32+H33)"
         With .Range("G35:H35")
             .Font.Bold = True
             .Font.Size = 14
             .Interior.Color = RGB(230, 126, 34)
         End With
-        .Range("H35").NumberFormat = "#,##0.00"
+        .Range("H35").NumberFormat = "[$KES] #,##0.00"
 
         ' Add borders to totals
         With .Range("G31:H35")
@@ -689,13 +720,13 @@ Private Sub BuildReceiptTemplate()
 
         ' Company header (rows 1-4)
         .Range("A1:F1").Merge
-        .Range("A1").Value = "=Settings!B2"
+        .Range("A1").Formula = "=IF(Settings!B2="""","""",Settings!B2)"
         .Range("A1").Font.Size = 16
         .Range("A1").Font.Bold = True
         .Range("A1").HorizontalAlignment = xlCenter
 
         .Range("A2:F2").Merge
-        .Range("A2").Value = "=Settings!B3"
+        .Range("A2").Formula = "=IF(Settings!B3="""","""",Settings!B3)"
         .Range("A2").HorizontalAlignment = xlCenter
 
         ' Title (row 6)
@@ -738,7 +769,7 @@ Private Sub BuildReceiptTemplate()
 
         .Range("B20").Formula = "=B16-B17"
         .Range("B20").Formula = "=B16-B17"
-        .Range("B16:B20").NumberFormat = "#,##0.00"
+        .Range("B16:B20").NumberFormat = "[$KES] #,##0.00"
 
         ' Add borders to payment details
         With .Range("A16:B20")
@@ -795,25 +826,28 @@ Private Sub BuildETRTemplate()
     ws.Columns("B:B").ColumnWidth = 15
     ws.Columns("C:C").ColumnWidth = 15
     
+    etrStep = "Format C as Currency"
+    ws.Columns("C:C").NumberFormat = "[$KES] #,##0.00"
+    
     etrStep = "Font setup A1:C44"
     ws.Range("A1:C44").Font.Name = "Consolas"
     ws.Range("A1:C44").Font.Size = 9
     
     etrStep = "Header row 1"
     ws.Range("A1:C1").Merge
-    ws.Range("A1").Value = "=Settings!B2"
+    ws.Range("A1").Formula = "=IF(Settings!B2="""","""",Settings!B2)"
     ws.Range("A1").HorizontalAlignment = xlCenter
     ws.Range("A1").Font.Bold = True
     ws.Range("A1").Font.Size = 11
     
     etrStep = "Header row 2"
     ws.Range("A2:C2").Merge
-    ws.Range("A2").Value = "=Settings!B3"
+    ws.Range("A2").Formula = "=IF(Settings!B3="""","""",Settings!B3)"
     ws.Range("A2").HorizontalAlignment = xlCenter
     
     etrStep = "Header row 3"
     ws.Range("A3:C3").Merge
-    ws.Range("A3").Value = "=Settings!B5"
+    ws.Range("A3").Formula = "=IF(Settings!B5="""","""",Settings!B5)"
     ws.Range("A3").HorizontalAlignment = xlCenter
     
     etrStep = "Header row 4 KRA"
@@ -983,6 +1017,12 @@ Private Sub BuildTaxSummarySheet()
 
         ' Column widths
         .Columns("A:G").ColumnWidth = 18
+        
+        ' Formats
+        .Columns("C:D").NumberFormat = "[$KES] #,##0.00" ' Revenue, Tax
+        .Columns("G:G").NumberFormat = "[$KES] #,##0.00" ' Outstanding
+        .Columns("E:E").NumberFormat = "0.00%" ' Tax Rate
+        .Columns("F:F").NumberFormat = "0" ' Count
     End With
 End Sub
 
@@ -1098,9 +1138,22 @@ Private Sub CreateKPICard(ws As Worksheet, cellRange As String, label As String,
         .Borders.LineStyle = xlContinuous
         .Borders.Weight = xlMedium
     End With
-    ' Set label in one cell above, formula in merged cell
-    ' Put label text and formula together
-    ws.Range(cellRange).Cells(1, 1).Value = label
+    ' Set composite formula
+    ' Strip = from start
+    If Left(formula, 1) = "=" Then formula = Mid(formula, 2)
+    
+    Dim fmt As String
+    If InStr(formula, "COUNT") > 0 Then
+        fmt = "0"
+    Else
+        fmt = "#,##0.00"
+    End If
+    
+    ' Formula: ="Label" & CHAR(10) & TEXT(Formula, "Format")
+    Dim finalFmla As String
+    finalFmla = "=""" & label & """ & CHAR(10) & TEXT(" & formula & ", """ & fmt & """)"
+    
+    ws.Range(cellRange).Formula = finalFmla
     On Error GoTo 0
 End Sub
 
@@ -1138,8 +1191,8 @@ Private Sub CreateAllNamedRanges()
     AddNamedRange "rngLastReceipt", "=Settings!$B$27"
     AddNamedRange "rngLastETR", "=Settings!$B$28"
     AddNamedRange "rngYearPrefix", "=Settings!$B$29"
-    AddNamedRange "rngPaymentMethods", "=Settings!$A$32:$A$38"
-    AddNamedRange "rngPaymentTerms", "=Settings!$B$41"
+    AddNamedRange "rngPaymentMethods", "=Settings!$A$32:$A$44"
+    AddNamedRange "rngPaymentTerms", "=Settings!$B$46"
 
     ' Invoice Template ranges
     AddNamedRange "rngInvNumber", "=Invoice_Template!$B$8"
@@ -1253,4 +1306,90 @@ Private Sub FinalSetup()
 
     ' Add calculation to refresh on open
     Application.Calculate
+End Sub
+
+' --------------------------------------------------------------------------
+' Step 15: Inject VBA Event Handlers
+' --------------------------------------------------------------------------
+Private Sub InjectSheetCode()
+    On Error Resume Next
+    Dim vbProj As Object
+    Set vbProj = ThisWorkbook.VBProject
+    
+    If Err.Number <> 0 Then
+        MsgBox "Setup Warning: Code Injection Failed." & vbCrLf & vbCrLf & _
+               "Please enable 'Trust access to the VBA project object model' in File > Options > Trust Center > Macro Settings.", vbExclamation
+        Exit Sub
+    End If
+    On Error GoTo 0
+
+    ' 1. Inject Dashboard Code
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("Dashboard")
+    Dim modName As String
+    modName = ws.CodeName
+    
+    ' If CodeName is empty (rare), try to find component
+    If modName = "" Then
+        Dim comp As Object
+        For Each comp In vbProj.VBComponents
+            If comp.Properties("Name").Value = "Dashboard" Then
+                modName = comp.Name
+                Exit For
+            End If
+        Next comp
+    End If
+    
+    If modName <> "" Then
+        With vbProj.VBComponents(modName).CodeModule
+            .DeleteLines 1, .CountOfLines
+            .AddFromString "Private Sub Worksheet_SelectionChange(ByVal Target As Range)" & vbCrLf & _
+                           "    On Error Resume Next" & vbCrLf & _
+                           "    modDashboard.HandleDashboardClick Target" & vbCrLf & _
+                           "End Sub" & vbCrLf & vbCrLf & _
+                           "Private Sub Worksheet_Activate()" & vbCrLf & _
+                           "    On Error Resume Next" & vbCrLf & _
+                           "    modDashboard.RefreshDashboard" & vbCrLf & _
+                           "End Sub"
+        End With
+    End If
+
+    ' 2. Inject Invoice_Template Code
+    Set ws = ThisWorkbook.Sheets("Invoice_Template")
+    modName = ws.CodeName
+    
+    If modName = "" Then
+        For Each comp In vbProj.VBComponents
+            If comp.Properties("Name").Value = "Invoice_Template" Then
+                modName = comp.Name
+                Exit For
+            End If
+        Next comp
+    End If
+    
+    If modName <> "" Then
+        With vbProj.VBComponents(modName).CodeModule
+            ' Only add if not present
+            If Not .Find("Worksheet_Activate", 1, 1, .CountOfLines, 1) Then
+                .AddFromString "" & vbCrLf & _
+                               "Private Sub Worksheet_Activate()" & vbCrLf & _
+                               "    On Error Resume Next" & vbCrLf & _
+                               "    modInvoice.UpdateLogo Me" & vbCrLf & _
+                               "End Sub"
+            End If
+        End With
+    End If
+
+    ' 3. Inject ThisWorkbook Code
+    With vbProj.VBComponents("ThisWorkbook").CodeModule
+        ' Only add if not present
+        If Not .Find("Workbook_Open", 1, 1, .CountOfLines, 1) Then
+             .AddFromString "" & vbCrLf & _
+                            "Private Sub Workbook_Open()" & vbCrLf & _
+                            "    On Error Resume Next" & vbCrLf & _
+                            "    modDashboard.RefreshDashboard" & vbCrLf & _
+                            "    modDashboard.NavigateTo ""Dashboard""" & vbCrLf & _
+                            "End Sub"
+        End If
+    End With
 End Sub

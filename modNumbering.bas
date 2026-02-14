@@ -10,33 +10,41 @@ Option Explicit
 ' --------------------------------------------------------------------------
 Public Function GetNextInvoiceNumber() As String
     On Error GoTo ErrHandler
-    Dim ws As Worksheet
-    Set ws = SafeSheetRef("Settings")
-    If ws Is Nothing Then Exit Function
     
+    Dim rngYear As Range
+    Dim rngCount As Range
+    
+    ' Use Named Ranges
+    Set rngYear = ThisWorkbook.Names("rngYearPrefix").RefersToRange
+    Set rngCount = ThisWorkbook.Names("rngLastInvoice").RefersToRange
+    
+    If rngYear Is Nothing Or rngCount Is Nothing Then Exit Function
+    
+    Dim ws As Worksheet
+    Set ws = rngYear.Parent ' Get the sheet these ranges belong to
     modUtilities.UnprotectSheet ws.Name
     
-    ' Year rollover check (B29 = Year Prefix)
+    ' Year rollover check
     Dim currentYear As Long
     currentYear = Year(Date)
-    If CLng(Val(ws.Range("B29").Value)) <> currentYear Then
-        ws.Range("B26").Value = 0
-        ws.Range("B27").Value = 0
-        ws.Range("B28").Value = 0
-        ws.Range("B29").Value = currentYear
+    If CLng(Val(rngYear.Value)) <> currentYear Then
+        rngCount.Value = 0
+        ThisWorkbook.Names("rngLastReceipt").RefersToRange.Value = 0
+        ThisWorkbook.Names("rngLastETR").RefersToRange.Value = 0
+        rngYear.Value = currentYear
     End If
     
-    ' Increment counter (B26 = Last Invoice Number)
+    ' Increment counter
     Dim nextCount As Long
-    nextCount = CLng(Val(ws.Range("B26").Value)) + 1
-    ws.Range("B26").Value = nextCount
+    nextCount = CLng(Val(rngCount.Value)) + 1
+    rngCount.Value = nextCount
     
     modUtilities.ProtectSheet ws.Name
     
     GetNextInvoiceNumber = "INV-" & currentYear & "-" & Format(nextCount, "0000")
     Exit Function
 ErrHandler:
-    modUtilities.ProtectSheet ws.Name
+    If Not ws Is Nothing Then modUtilities.ProtectSheet ws.Name
     ErrorHandler "GetNextInvoiceNumber", Err.Number, Err.Description
 End Function
 
@@ -45,21 +53,25 @@ End Function
 ' --------------------------------------------------------------------------
 Public Function GetNextReceiptNumber() As String
     On Error GoTo ErrHandler
-    Dim ws As Worksheet
-    Set ws = SafeSheetRef("Settings")
     
+    Dim rngCount As Range
+    Set rngCount = ThisWorkbook.Names("rngLastReceipt").RefersToRange
+    If rngCount Is Nothing Then Exit Function
+    
+    Dim ws As Worksheet
+    Set ws = rngCount.Parent
     modUtilities.UnprotectSheet ws.Name
     
     Dim nextCount As Long
-    nextCount = CLng(Val(ws.Range("B27").Value)) + 1
-    ws.Range("B27").Value = nextCount
+    nextCount = CLng(Val(rngCount.Value)) + 1
+    rngCount.Value = nextCount
     
     modUtilities.ProtectSheet ws.Name
     
     GetNextReceiptNumber = "RCPT-" & Year(Date) & "-" & Format(nextCount, "0000")
     Exit Function
 ErrHandler:
-    modUtilities.ProtectSheet ws.Name
+    If Not ws Is Nothing Then modUtilities.ProtectSheet ws.Name
     ErrorHandler "GetNextReceiptNumber", Err.Number, Err.Description
 End Function
 
@@ -68,20 +80,24 @@ End Function
 ' --------------------------------------------------------------------------
 Public Function GetNextETRNumber() As String
     On Error GoTo ErrHandler
-    Dim ws As Worksheet
-    Set ws = SafeSheetRef("Settings")
     
+    Dim rngCount As Range
+    Set rngCount = ThisWorkbook.Names("rngLastETR").RefersToRange
+    If rngCount Is Nothing Then Exit Function
+    
+    Dim ws As Worksheet
+    Set ws = rngCount.Parent
     modUtilities.UnprotectSheet ws.Name
     
     Dim nextCount As Long
-    nextCount = CLng(Val(ws.Range("B28").Value)) + 1
-    ws.Range("B28").Value = nextCount
+    nextCount = CLng(Val(rngCount.Value)) + 1
+    rngCount.Value = nextCount
     
     modUtilities.ProtectSheet ws.Name
     
     GetNextETRNumber = "ETR-" & Year(Date) & "-" & Format(nextCount, "0000")
     Exit Function
 ErrHandler:
-    modUtilities.ProtectSheet ws.Name
+    If Not ws Is Nothing Then modUtilities.ProtectSheet ws.Name
     ErrorHandler "GetNextETRNumber", Err.Number, Err.Description
 End Function

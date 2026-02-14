@@ -9,8 +9,8 @@
    - Run: `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 2. **Run the setup script**:
-   - Right-click `CreateInitialWorkbook.ps1`
-   - Select **"Run with PowerShell"**
+   - Right-click `CreateInitialWorkbook.ps1` -> Select **"Run with PowerShell"**
+   - **OR** Run in Terminal: `.\CreateInitialWorkbook.ps1` (Note the dot-slash!)
    - Follow prompts
    - ✅ Done! Workbook created with builder modules imported
 

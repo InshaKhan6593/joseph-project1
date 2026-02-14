@@ -46,7 +46,8 @@ Public Sub ImportAllModules()
         "modDashboard.bas", _
         "modSecurity.bas", _
         "modForms.bas", _
-        "modDiagnostics.bas" _
+        "modDiagnostics.bas", _
+        "modWorkbookBuilder.bas" _
     )
 
     ' Check existing modules

@@ -148,9 +148,30 @@ Public Sub ShowPaymentEntry(Optional invoiceNo As String = "")
     
     ' Get payment method
     Dim method As String
-    method = InputBox("Enter payment method:" & vbCrLf & _
-                      "Cash, M-Pesa, Bank Transfer, Credit Card, Debit Card, Cheque, Other", _
-                      "Payment Method")
+    Dim methodList As String
+    methodList = "Enter payment method:" & vbCrLf
+    
+    ' Build list dynamically from named range
+    On Error Resume Next
+    Dim rngMethods As Range
+    Set rngMethods = ThisWorkbook.Names("rngPaymentMethods").RefersToRange
+    
+    If Not rngMethods Is Nothing Then
+        Dim cell As Range
+        For Each cell In rngMethods
+            If Trim(cell.Value) <> "" Then
+                methodList = methodList & cell.Value & ", "
+            End If
+        Next cell
+        ' Remove trailing comma
+        If Right(methodList, 2) = ", " Then methodList = Left(methodList, Len(methodList) - 2)
+    Else
+        ' Fallback if range missing
+        methodList = methodList & "Cash, M-Pesa, Bank Transfer, Cheque"
+    End If
+    On Error GoTo ErrHandler
+    
+    method = InputBox(methodList, "Payment Method")
     If method = "" Then method = "Cash"
     
     ' Get reference

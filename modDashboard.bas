@@ -42,6 +42,19 @@ Public Sub HandleDashboardClick(Target As Range)
     r = Target.Row
     c = Target.Column
     
+    ' Check if click is in button area
+    Dim isButton As Boolean
+    isButton = (r >= 13 And r <= 14) Or (r >= 16 And r <= 17)
+    
+    If isButton Then
+        ' Force selection away from button so it can be clicked again
+        On Error Resume Next
+        Application.EnableEvents = False
+        Target.Worksheet.Range("A1").Select
+        Application.EnableEvents = True
+        On Error GoTo ErrHandler
+    End If
+
     ' Row 13-14: First button row
     If r >= 13 And r <= 14 Then
         Select Case True
