@@ -583,14 +583,17 @@ Private Sub BuildInvoiceTemplate()
         End With
 
         ' Invoice info (left side, rows 8-11)
-        .Range("A8").Value = "Invoice No:"
-        .Range("A9").Value = "Date:"
-        .Range("A10").Value = "Due Date:"
-        .Range("A11").Value = "Terms:"
-        .Range("A8:A11").Font.Bold = True
+        .Range("A8:B8").Merge: .Range("A8").Value = "Invoice No:"
+        .Range("A9:B9").Merge: .Range("A9").Value = "Date:"
+        .Range("A10:B10").Merge: .Range("A10").Value = "Due Date:"
+        .Range("A11:B11").Merge: .Range("A11").Value = "Terms:"
+        .Range("A8:B11").HorizontalAlignment = xlRight
+        .Range("A8:B11").Font.Bold = True
         
-        ' Date formats
-        .Range("B9:B10").NumberFormat = "dd-mmm-yyyy"
+        ' Date formats (Values moved to Column C)
+        .Range("C9:C10").NumberFormat = "dd-mmm-yyyy"
+        ' Align values Left
+        .Range("C8:C11").HorizontalAlignment = xlLeft
 
         ' Customer info (right side, rows 8-11)
         .Range("E8").Value = "BILL TO:"
@@ -642,7 +645,8 @@ Private Sub BuildInvoiceTemplate()
         .Range("H31").NumberFormat = "[$KES] #,##0.00"
 
         .Range("G32").Value = "Discount"
-        .Range("H32").Value = 0
+        ' Formula: Subtotal * Default Discount % (Settings B47)
+        .Range("H32").Formula = "=H31*Settings!B47"
         .Range("H32").NumberFormat = "[$KES] #,##0.00"
 
         .Range("G33").Value = "Tax (VAT/Sales Tax)"

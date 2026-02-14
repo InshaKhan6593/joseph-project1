@@ -67,7 +67,17 @@ Public Sub AddLineItem(wsInv As Worksheet, lineNum As Long, sku As String, _
     wsInv.Cells(r, 2).Value = prod("SKU")       ' B: SKU
     wsInv.Cells(r, 3).Value = prod("Name")      ' C: Description
     wsInv.Cells(r, 4).Value = qty               ' D: Qty
+    wsInv.Cells(r, 4).Value = qty               ' D: Qty
     wsInv.Cells(r, 5).Value = prod("UnitPrice") ' E: Unit Price
+    
+    ' Apply Default Discount if none provided
+    If discPct = 0 Then
+        Dim defDisc As Double
+        defDisc = Val(modUtilities.GetSetting("Default Discount %"))
+        ' Value 0.05 (5%) -> becomes 5 for the column
+        If defDisc > 0 Then discPct = defDisc * 100
+    End If
+    
     wsInv.Cells(r, 6).Value = discPct           ' F: Discount%
     wsInv.Cells(r, 7).Value = prod("TaxCategory") ' G: Tax Category
     ' H column has formula =IF(D15="","",D15*E15*(1-F15/100)) — DO NOT overwrite!

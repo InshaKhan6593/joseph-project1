@@ -33,12 +33,13 @@ Public Sub GenerateInvoice()
     ' Set Invoice Number
     Dim invNo As String
     invNo = modNumbering.GetNextInvoiceNumber()
-    wsInv.Range("B8").Value = invNo
+    invNo = modNumbering.GetNextInvoiceNumber()
+    wsInv.Range("C8").Value = invNo
     
     ' Set Date and Due Date
-    wsInv.Range("B9").Value = Date
-    wsInv.Range("B10").Value = Date + 30
-    wsInv.Range("B11").Value = modUtilities.GetSetting("Payment Terms")
+    wsInv.Range("C9").Value = Date
+    wsInv.Range("C10").Value = Date + 30
+    wsInv.Range("C11").Value = modUtilities.GetSetting("Payment Terms")
 
     ' Update Logo from Settings
     UpdateLogo wsInv
@@ -83,18 +84,20 @@ Public Sub FinalizeInvoice()
     Set wsTrans = modUtilities.SafeSheetRef("Transactions")
     
     ' Validate
-    If wsInv.Range("B8").Value = "" Then MsgBox "Invoice number missing!", vbCritical: Exit Sub
+    ' Validate
+    If wsInv.Range("C8").Value = "" Then MsgBox "Invoice number missing!", vbCritical: Exit Sub
     If wsInv.Range("E9").Value = "" Then MsgBox "Customer missing!", vbCritical: Exit Sub
     If Val(wsInv.Range("H35").Value) <= 0 Then MsgBox "Total must be > 0.", vbCritical: Exit Sub
     
     modUtilities.TogglePerformance True
     
     ' Read from template
-    Dim invNo As String:     invNo = CStr(wsInv.Range("B8").Value)
+    Dim invNo As String:     invNo = CStr(wsInv.Range("C8").Value)
     Dim custName As String:  custName = CStr(wsInv.Range("E9").Value)
-    Dim dateIssued As Date:  dateIssued = wsInv.Range("B9").Value
-    Dim due As Date:         due = wsInv.Range("B10").Value
+    Dim dateIssued As Date:  dateIssued = wsInv.Range("C9").Value
+    Dim due As Date:         due = wsInv.Range("C10").Value
     Dim subTot As Double:    subTot = Val(wsInv.Range("H31").Value)
+    Dim discountVal As Double: discountVal = Val(wsInv.Range("H32").Value)
     Dim tax As Double:       tax = Val(wsInv.Range("H33").Value)
     Dim total As Double:     total = Val(wsInv.Range("H35").Value)
     
@@ -116,7 +119,7 @@ Public Sub FinalizeInvoice()
         .Cells(nextRow, 5).Value = due
         .Cells(nextRow, 6).Value = subTot
         .Cells(nextRow, 7).Value = tax
-        .Cells(nextRow, 8).Value = 0
+        .Cells(nextRow, 8).Value = discountVal
         .Cells(nextRow, 9).Value = total
         .Cells(nextRow, 10).Value = 0
         .Cells(nextRow, 11).Value = total
@@ -150,11 +153,12 @@ Public Sub ClearInvoiceTemplate()
     modUtilities.UnprotectSheet wsInv.Name
     
     On Error Resume Next
-    wsInv.Range("B8").ClearContents    ' Invoice Number
-    wsInv.Range("B9").ClearContents    ' Date
-    wsInv.Range("B10").ClearContents   ' Due Date
-    ' rngPaymentTerms mapped to B11 in Plan A
-    wsInv.Range("B11").ClearContents
+    On Error Resume Next
+    wsInv.Range("C8").ClearContents    ' Invoice Number
+    wsInv.Range("C9").ClearContents    ' Date
+    wsInv.Range("C10").ClearContents   ' Due Date
+    ' rngPaymentTerms mapped to C11 (was B11)
+    wsInv.Range("C11").ClearContents
     ' Customer info E9:E11
     wsInv.Range("E9:E11").ClearContents
     ' Only clear data columns A-G, preserve H column formulas
@@ -190,9 +194,9 @@ Public Sub EditInvoice(invoiceNo As String)
     ClearInvoiceTemplate
     Dim wsInv As Worksheet
     Set wsInv = modUtilities.SafeSheetRef("Invoice_Template")
-    wsInv.Range("B8").Value = wsTrans.Cells(foundRow, 1).Value
-    wsInv.Range("B9").Value = wsTrans.Cells(foundRow, 4).Value
-    wsInv.Range("B10").Value = wsTrans.Cells(foundRow, 5).Value
+    wsInv.Range("C8").Value = wsTrans.Cells(foundRow, 1).Value
+    wsInv.Range("C9").Value = wsTrans.Cells(foundRow, 4).Value
+    wsInv.Range("C10").Value = wsTrans.Cells(foundRow, 5).Value
     modCustomer.PopulateInvoiceCustomer CStr(wsTrans.Cells(foundRow, 2).Value)
     wsInv.Activate
     MsgBox "Invoice loaded. Re-enter line items.", vbInformation
@@ -234,6 +238,13 @@ Public Sub UpdateLogo(ws As Worksheet)
     ' Handle protection locally since this can be called from Activate event
     modUtilities.UnprotectSheet ws.Name
     
+    ' NEW: Fix Visual Glitch - Ensure clean view state
+    On Error Resume Next
+    If ActiveWindow.View <> xlNormalView Then ActiveWindow.View = xlNormalView
+    ActiveWindow.ScrollRow = 1
+    ActiveWindow.ScrollColumn = 1
+    On Error GoTo ErrHandler
+
     Dim picPath As String
     picPath = modUtilities.GetSetting("Logo Path")
     
