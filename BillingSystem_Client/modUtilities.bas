@@ -190,18 +190,7 @@ Public Sub ProtectSheet(sheetName As String)
 End Sub
 
 ' --------------------------------------------------------------------------
-' GetCashierName - Returns value from Settings or Application.UserName
-' --------------------------------------------------------------------------
-Public Function GetCashierName() As String
-    On Error Resume Next
-    Dim name As String
-    name = ThisWorkbook.Names("rngDefaultCashier").RefersToRange.Value
-    If name = "" Then name = Application.UserName
-    GetCashierName = name
-End Function
-
-' --------------------------------------------------------------------------
-' AuditLog - Logs actions to highly hidden sheet
+' 11. AuditLog(action As String, details As String)
 ' --------------------------------------------------------------------------
 Public Sub AuditLog(action As String, details As String)
     On Error Resume Next
@@ -217,17 +206,13 @@ Public Sub AuditLog(action As String, details As String)
         ws.Cells(1, 3).Value = "Details"
         ws.Cells(1, 4).Value = "User"
         ws.Rows(1).Font.Bold = True
-        ws.Visible = xlSheetVisible
     End If
-    
-    ' Ensure it stays visible
-    If ws.Visible <> xlSheetVisible Then ws.Visible = xlSheetVisible
     
     Dim nextRow As Long
     nextRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
     ws.Cells(nextRow, 1).Value = Now
     ws.Cells(nextRow, 2).Value = action
     ws.Cells(nextRow, 3).Value = details
-    ws.Cells(nextRow, 4).Value = GetCashierName()
+    ws.Cells(nextRow, 4).Value = Application.UserName
     On Error GoTo 0
 End Sub

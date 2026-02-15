@@ -12,117 +12,121 @@ Option Explicit
 ' ==============================================================================
 
 ' --------------------------------------------------------------------------
-' 1. ShowCustomerPicker() — Replaces frmCustomerSelect
-'    Returns customer ID or "" if cancelled
+' 1. ShowCustomerPicker() — Activates Customer Sheet
 ' --------------------------------------------------------------------------
-Public Function ShowCustomerPicker() As String
+Public Sub ShowCustomerPicker()
     On Error GoTo ErrHandler
-    ShowCustomerPicker = ""
+    g_selectingForInvoice = True
     
     Dim ws As Worksheet
     Set ws = SafeSheetRef("Customers")
-    If ws Is Nothing Then Exit Function
+    If ws Is Nothing Then Exit Sub
     
-    Dim lastRow As Long
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    If lastRow < 2 Then MsgBox "No customers found.", vbExclamation: Exit Function
-    
-    ' Build list string from sheet data directly
-    Dim list As String
-    list = "Available Customers:" & vbCrLf & vbCrLf
-    
-    Dim i As Long
-    For i = 2 To lastRow
-        If CStr(ws.Cells(i, 1).Value) <> "" Then
-            Dim status As String
-            status = LCase(CStr(ws.Cells(i, 11).Value))
-            If status = "active" Or status = "" Then
-                list = list & CStr(ws.Cells(i, 1).Value) & " - " & CStr(ws.Cells(i, 2).Value) & vbCrLf
-            End If
-        End If
-    Next i
-    
-    list = list & vbCrLf & "Enter Customer ID (e.g. C001):"
-    
-    Dim custID As String
-    custID = InputBox(list, "Select Customer")
-    
-    If custID = "" Then Exit Function
-    
-    ' Validate
-    custID = UCase(Trim(custID))
-    For i = 2 To lastRow
-        If UCase(CStr(ws.Cells(i, 1).Value)) = custID Then
-            ShowCustomerPicker = CStr(ws.Cells(i, 1).Value)
-            Exit Function
-        End If
-    Next i
-    
-    MsgBox "Customer ID '" & custID & "' not found. Please try again.", vbExclamation
-    ShowCustomerPicker = ShowCustomerPicker() ' Retry
-    Exit Function
+    ws.Activate
+    MsgBox "Please DOUBLE-CLICK the customer you want to select.", vbInformation, "Select Customer"
+    Exit Sub
 ErrHandler:
     ErrorHandler "ShowCustomerPicker", Err.Number, Err.Description
-End Function
+End Sub
+
+' --------------------------------------------------------------------------
+' 1b. SelectCustomerFromSheet(row) — Called by DoubleClick Event
+' --------------------------------------------------------------------------
+Public Sub SelectCustomerFromSheet(row As Long)
+    On Error GoTo ErrHandler
+    
+    Dim ws As Worksheet
+    Set ws = SafeSheetRef("Customers")
+    
+    Dim custID As String
+    custID = CStr(ws.Cells(row, 1).Value)
+    
+    If custID = "" Then Exit Sub
+    
+    If g_selectingForInvoice Then
+        g_selectedCustomerID = custID
+        ' Return to Invoice
+        Dim wsInv As Worksheet
+        Set wsInv = SafeSheetRef("Invoice_Template")
+        wsInv.Activate
+        
+        ' Populate
+        PopulateInvoiceCustomer custID
+        
+        g_selectingForInvoice = False
+    Else
+        MsgBox "Customer: " & custID
+    End If
+    Exit Sub
+ErrHandler:
+    ErrorHandler "SelectCustomerFromSheet", Err.Number, Err.Description
+End Sub
 
 ' --------------------------------------------------------------------------
 ' 2. ShowProductPicker(wsInv) — Replaces frmProductSelect
 '    Lets user add line items to invoice one at a time
 ' --------------------------------------------------------------------------
+' --------------------------------------------------------------------------
+' 2. ShowProductPicker(wsInv) — Activates Products Sheet
+' --------------------------------------------------------------------------
 Public Sub ShowProductPicker(wsInv As Worksheet)
     On Error GoTo ErrHandler
+    g_selectingForInvoice = True
     
     Dim ws As Worksheet
     Set ws = SafeSheetRef("Products")
     If ws Is Nothing Then Exit Sub
     
-    Dim lastRow As Long
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    If lastRow < 2 Then MsgBox "No products found.", vbExclamation: Exit Sub
-    
-    Dim lineNum As Long
-    lineNum = 1
-    
-    Do
-        ' Build product list from sheet data directly
-        Dim list As String
-        list = "Available Products:" & vbCrLf & vbCrLf
-        Dim i As Long
-        For i = 2 To lastRow
-            If CStr(ws.Cells(i, 1).Value) <> "" Then
-                Dim pStatus As String
-                pStatus = LCase(CStr(ws.Cells(i, 8).Value))
-                If pStatus = "active" Or pStatus = "" Then
-                    list = list & CStr(ws.Cells(i, 1).Value) & " - " & CStr(ws.Cells(i, 2).Value) & _
-                           " (" & modUtilities.FormatCurrency(CDbl(Val(ws.Cells(i, 5).Value))) & "/" & CStr(ws.Cells(i, 6).Value) & ")" & vbCrLf
-                End If
-            End If
-        Next i
-        
-        list = list & vbCrLf & "Enter Product SKU (or leave blank to finish):"
-        
-        Dim sku As String
-        sku = InputBox(list, "Add Product - Line " & lineNum)
-        
-        If sku = "" Then Exit Do
-        If lineNum > 15 Then MsgBox "Maximum 15 line items.", vbExclamation: Exit Do
-        
-        ' Get quantity
-        Dim qtyStr As String
-        qtyStr = InputBox("Enter quantity for " & sku & ":", "Quantity")
-        If qtyStr = "" Then Exit Do
-        
-        Dim qty As Double
-        qty = CDbl(Val(qtyStr))
-        If qty <= 0 Then qty = 1
-        
-        ' Add line item
-        modProduct.AddLineItem wsInv, lineNum, UCase(Trim(sku)), qty, 0
-        lineNum = lineNum + 1
-    Loop
+    ws.Activate
+    MsgBox "Please DOUBLE-CLICK the product you want to add.", vbInformation, "Select Product"
     Exit Sub
 ErrHandler:
     ErrorHandler "ShowProductPicker", Err.Number, Err.Description
+End Sub
+
+' --------------------------------------------------------------------------
+' 2b. SelectProductFromSheet(row) — Called by DoubleClick
+' --------------------------------------------------------------------------
+Public Sub SelectProductFromSheet(row As Long)
+    On Error GoTo ErrHandler
+    
+    Dim ws As Worksheet
+    Set ws = SafeSheetRef("Products")
+    
+    Dim sku As String
+    sku = CStr(ws.Cells(row, 1).Value)
+    
+    If sku = "" Then Exit Sub
+    
+    If g_selectingForInvoice Then
+        ' Ask for quantity
+        Dim qtyAsStr As String
+        qtyAsStr = InputBox("Enter quantity for " & sku & ":", "Quantity", "1")
+        If qtyAsStr = "" Then Exit Sub
+        
+        Dim qty As Double
+        qty = CDbl(Val(qtyAsStr))
+        
+        ' Return to Invoice
+        Dim wsInv As Worksheet
+        Set wsInv = SafeSheetRef("Invoice_Template")
+        wsInv.Activate
+        
+        ' Add item
+        modProduct.AddLineItem wsInv, modProduct.GetNextLineItemRow(wsInv), sku, qty, 0
+        
+        ' Ask if more
+        If MsgBox("Product added. Do you want to add another?", vbYesNo + vbQuestion, "Add More?") = vbYes Then
+            ws.Activate
+        Else
+            g_selectingForInvoice = False
+        End If
+    Else
+        MsgBox "Product: " & sku
+    End If
+    Exit Sub
+ErrHandler:
+    ErrorHandler "SelectProductFromSheet", Err.Number, Err.Description
 End Sub
 
 ' --------------------------------------------------------------------------
@@ -146,33 +150,29 @@ Public Sub ShowPaymentEntry(Optional invoiceNo As String = "")
     amount = CDbl(Val(amtStr))
     If amount <= 0 Then MsgBox "Amount must be > 0", vbExclamation: Exit Sub
     
-    ' Get payment method
+    ' 3. Get payment method using Selection Form
     Dim method As String
-    Dim methodList As String
-    methodList = "Enter payment method:" & vbCrLf
-    
-    ' Build list dynamically from named range
-    On Error Resume Next
+    Dim items As New Collection
     Dim rngMethods As Range
-    Set rngMethods = ThisWorkbook.Names("rngPaymentMethods").RefersToRange
+    Dim cell As Range
     
-    If Not rngMethods Is Nothing Then
-        Dim cell As Range
-        For Each cell In rngMethods
-            If Trim(cell.Value) <> "" Then
-                methodList = methodList & cell.Value & ", "
-            End If
-        Next cell
-        ' Remove trailing comma
-        If Right(methodList, 2) = ", " Then methodList = Left(methodList, Len(methodList) - 2)
-    Else
-        ' Fallback if range missing
-        methodList = methodList & "Cash, M-Pesa, Bank Transfer, Cheque"
-    End If
+    On Error Resume Next
+    Set rngMethods = ThisWorkbook.Names("rngPaymentMethods").RefersToRange
     On Error GoTo ErrHandler
     
-    method = InputBox(methodList, "Payment Method")
-    If method = "" Then method = "Cash"
+    If Not rngMethods Is Nothing Then
+        For Each cell In rngMethods
+            If Trim(cell.Value) <> "" Then items.Add cell.Value
+        Next cell
+    Else
+        ' Fallback
+        items.Add "Cash": items.Add "M-Pesa": items.Add "Bank Transfer": items.Add "Cheque"
+    End If
+    
+    method = modFormBuilder.ShowSelectionDialog("Select Payment Method", items)
+    If method = "" Then Exit Sub ' Cancelled
+
+
     
     ' Get reference
     Dim refNo As String

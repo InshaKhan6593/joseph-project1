@@ -123,37 +123,11 @@ End Sub
 ' --------------------------------------------------------------------------
 ' ShowProductSelector
 ' --------------------------------------------------------------------------
-
 Public Sub ShowProductSelector()
     On Error GoTo ErrHandler
     Dim wsInv As Worksheet
     Set wsInv = SafeSheetRef("Invoice_Template")
-    
-    Dim col As Collection
-    Set col = ListActiveProducts()
-    
-    If col.Count = 0 Then MsgBox "No products found.", vbExclamation: Exit Sub
-    
-    Do
-        Dim result As String
-        result = modFormBuilder.ShowSelectionDialog("Select Product (Cancel to Finish)", col)
-        
-        If result = "" Then Exit Do
-        
-        ' Parse SKU "SKU - Name (Price)"
-        Dim sku As String
-        sku = Split(result, " - ")(0)
-        
-        ' Ask Quantity
-        Dim qtyStr As String
-        qtyStr = InputBox("Enter Quantity for " & sku & ":", "Quantity", "1")
-        If qtyStr = "" Then Exit Do
-        
-        Dim qty As Double
-        qty = CDbl(Val(qtyStr))
-        
-        modProduct.AddLineItem wsInv, modProduct.GetNextLineItemRow(wsInv), sku, qty, 0
-    Loop
+    modForms.ShowProductPicker wsInv
     Exit Sub
 ErrHandler:
     ErrorHandler "ShowProductSelector", Err.Number, Err.Description
@@ -185,31 +159,3 @@ Public Function ListActiveProducts() As Collection
 ErrHandler:
     ErrorHandler "ListActiveProducts", Err.Number, Err.Description
 End Function
-' --------------------------------------------------------------------------
-' GetNextLineItemRow
-' --------------------------------------------------------------------------
-Public Function GetNextLineItemRow(wsInv As Worksheet) As Long
-    On Error GoTo ErrHandler
-    Dim i As Long
-    For i = 15 To 29
-        If wsInv.Cells(i, 2).Value = "" Then
-            GetNextLineItemRow = i - 14 ' Return line number (1-15)
-            Exit Function
-        End If
-    Next i
-    GetNextLineItemRow = 16 ' Full
-    Exit Function
-ErrHandler:
-    GetNextLineItemRow = 1
-End Function
-
-' --------------------------------------------------------------------------
-' SelectProductFromSheet - CALLED BY DOUBLE CLICK
-' --------------------------------------------------------------------------
-Public Sub SelectProductFromSheet(row As Long)
-    On Error GoTo ErrHandler
-    modForms.SelectProductFromSheet row
-    Exit Sub
-ErrHandler:
-    ErrorHandler "SelectProductFromSheet_Proxy", Err.Number, Err.Description
-End Sub

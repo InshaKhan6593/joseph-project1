@@ -75,8 +75,7 @@ $allModules = @(
     "modDashboard.bas",
     "modSecurity.bas",
     "modForms.bas",
-    "modDiagnostics.bas",
-    "modFormBuilder.bas"
+    "modDiagnostics.bas"
 )
 
 # Check all modules exist

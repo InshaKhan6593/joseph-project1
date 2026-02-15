@@ -65,16 +65,9 @@ Public Sub ExportToPDF(docType As String, Optional docNumber As String = "")
     AuditLog "PDF_EXPORT", "Exported " & docType & " to " & fullPath
     
     If MsgBox("Export successful!" & vbCrLf & fullPath & vbCrLf & vbCrLf & "Open PDF now?", vbYesNo + vbQuestion) = vbYes Then
-        ' Check if file exists before opening
-        If Dir(fullPath) <> "" Then
-            ' Use Shell to open with default PDF viewer (more robust than FollowHyperlink)
-            Shell "explorer.exe """ & fullPath & """", vbNormalFocus
-        Else
-            MsgBox "PDF file not found at " & fullPath, vbCritical
-        End If
+        ThisWorkbook.FollowHyperlink fullPath
     End If
     Exit Sub
-
 ErrHandler:
     ErrorHandler "ExportToPDF", Err.Number, Err.Description
 End Sub
@@ -85,48 +78,23 @@ End Sub
 Public Function CreateFolderStructure(basePath As String, docType As String) As String
     On Error Resume Next
     
-    ' 1. Ensure basePath exists
-    CreatePath basePath
-    
-    ' 2. Create DocType folder
     Dim typeFolder As String
-    typeFolder = basePath & "\" & StrConv(docType, vbProperCase) & "s"
-    If Dir(typeFolder, vbDirectory) = "" Then MkDir typeFolder
-    
-    ' 3. Create Year folder
     Dim yearFolder As String
-    yearFolder = typeFolder & "\" & Format(Date, "yyyy")
-    If Dir(yearFolder, vbDirectory) = "" Then MkDir yearFolder
-    
-    ' 4. Create Month folder
     Dim monthFolder As String
+    
+    typeFolder = basePath & "\" & StrConv(docType, vbProperCase) & "s"
+    yearFolder = typeFolder & "\" & Format(Date, "yyyy")
     monthFolder = yearFolder & "\" & Format(Date, "mm")
+    
+    ' Create each level if not exists
+    If Dir(basePath, vbDirectory) = "" Then MkDir basePath
+    If Dir(typeFolder, vbDirectory) = "" Then MkDir typeFolder
+    If Dir(yearFolder, vbDirectory) = "" Then MkDir yearFolder
     If Dir(monthFolder, vbDirectory) = "" Then MkDir monthFolder
     
     CreateFolderStructure = monthFolder
     On Error GoTo 0
 End Function
-
-' --------------------------------------------------------------------------
-' Helper: CreatePath — Recursively creates a folder path
-' --------------------------------------------------------------------------
-Private Sub CreatePath(ByVal folderPath As String)
-    On Error Resume Next
-    Dim folders() As String
-    Dim i As Long, currentPath As String
-    
-    folders = Split(folderPath, "\")
-    
-    ' Handle drive letter
-    currentPath = folders(0)
-    
-    For i = 1 To UBound(folders)
-        currentPath = currentPath & "\" & folders(i)
-        If Dir(currentPath, vbDirectory) = "" Then
-            MkDir currentPath
-        End If
-    Next i
-End Sub
 
 ' --------------------------------------------------------------------------
 ' 3. GenerateFileName — Clean filename for PDF

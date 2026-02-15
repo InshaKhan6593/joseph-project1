@@ -48,21 +48,12 @@ Public Sub GenerateReceipt(invoiceNo As String)
     wsRcpt.Range("B19").Value = "" ' Ref
     wsRcpt.Range("B20").Value = wsTrans.Cells(transRow, 11).Value
     
-    ' Populate Signature Area
-    wsRcpt.Range("B22").Value = modUtilities.GetCashierName()
-    wsRcpt.Range("E22").Value = Date
-    
     AuditLog "RECEIPT", wsRcpt.Range("B8").Value & " for " & invoiceNo
-
     
     modUtilities.ProtectSheet wsRcpt.Name
     
     wsRcpt.Activate
-    
-    If MsgBox("Receipt " & wsRcpt.Range("B8").Value & " generated!" & vbCrLf & vbCrLf & _
-              "Would you like to save it as PDF?", vbYesNo + vbQuestion, "Save PDF?") = vbYes Then
-        modExport.ExportToPDF "receipt"
-    End If
+    MsgBox "Receipt " & wsRcpt.Range("B8").Value & " generated!", vbInformation
     Exit Sub
 ErrHandler:
     modUtilities.ProtectSheet wsRcpt.Name
@@ -99,20 +90,10 @@ Public Sub GenerateReceiptFromPayment(paymentID As String)
     wsRcpt.Range("B19").Value = wsPay.Cells(payRow, 7).Value
     wsRcpt.Range("B20").Value = 0
 
-    ' Populate Signature Area
-    wsRcpt.Range("B22").Value = modUtilities.GetCashierName()
-    wsRcpt.Range("E22").Value = Date
-
-
     modUtilities.ProtectSheet wsRcpt.Name
 
-    If MsgBox("Receipt generated! Would you like to save it as PDF?", vbYesNo + vbQuestion, "Save PDF?") = vbYes Then
-        modExport.ExportToPDF "receipt"
-    End If
-    
+    AuditLog "RECEIPT", wsRcpt.Range("B8").Value & " for payment " & paymentID
     wsRcpt.Activate
-    Exit Sub
-
     MsgBox "Receipt generated!", vbInformation
     Exit Sub
 ErrHandler:
@@ -132,10 +113,6 @@ Public Sub ClearReceiptTemplate()
     modUtilities.UnprotectSheet ws.Name
     ws.Range("B8:B12").ClearContents
     ws.Range("B16:B20").ClearContents
-    ws.Range("B22").ClearContents
-    ws.Range("E22").ClearContents
     modUtilities.ProtectSheet ws.Name
     On Error GoTo 0
 End Sub
-
-

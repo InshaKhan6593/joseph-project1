@@ -83,7 +83,7 @@ Public Sub RecordPayment(invoiceNo As String, amount As Double, _
         .Cells(payRow, 5).Value = amount
         .Cells(payRow, 6).Value = paymentMethod
         .Cells(payRow, 7).Value = refNo
-        .Cells(payRow, 8).Value = modUtilities.GetCashierName()
+        .Cells(payRow, 8).Value = Application.UserName
         .Cells(payRow, 9).Value = notes
     End With
     
@@ -166,4 +166,13 @@ ErrHandler:
     ErrorHandler "GetPaymentHistory", Err.Number, Err.Description
 End Function
 
-
+' --------------------------------------------------------------------------
+' ShowPaymentForm
+' --------------------------------------------------------------------------
+Public Sub ShowPaymentForm(Optional invoiceNo As String = "")
+    On Error GoTo ErrHandler
+    modForms.ShowPaymentEntry invoiceNo
+    Exit Sub
+ErrHandler:
+    ErrorHandler "ShowPaymentForm", Err.Number, Err.Description
+End Sub

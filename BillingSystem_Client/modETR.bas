@@ -57,7 +57,7 @@ Public Sub GenerateETR(invoiceNo As String)
 
     wsETR.Cells(7, 1).Value = "Receipt No: " & etrNum
     wsETR.Cells(8, 1).Value = "Date: " & Format(Now, "dd/mm/yyyy hh:nn:ss")
-    wsETR.Cells(9, 1).Value = "Cashier: " & modUtilities.GetCashierName()
+    wsETR.Cells(9, 1).Value = "Cashier: " & Application.UserName
 
     ' Copy line items from invoice template (rows 15-29) to ETR (rows 13-27)
     Dim etrRow As Long: etrRow = 13

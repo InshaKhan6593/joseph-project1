@@ -43,9 +43,6 @@ Public Sub BuildCompleteWorkbook()
 
     stepName = "BuildPaymentLogSheet"
     BuildPaymentLogSheet
-    
-    stepName = "BuildAuditLogSheet"
-    BuildAuditLogSheet
 
     stepName = "BuildInvoiceTemplate"
     BuildInvoiceTemplate
@@ -258,12 +255,9 @@ Private Sub BuildSettingsSheet()
         .Range("B49").Formula = "=TODAY()"
         .Range("B49").NumberFormat = "dd-mmm-yyyy"
 
-        .Range("A50").Value = "Default Cashier"
-        .Range("B50").Value = Application.UserName
-
         ' Column widths
         .Columns("A:A").ColumnWidth = 20
-        .Columns("B:B").ColumnWidth = 30
+        .Columns("B:B").ColumnWidth = 20
         .Columns("C:E").ColumnWidth = 15
     End With
 End Sub
@@ -543,44 +537,6 @@ Private Sub BuildPaymentLogSheet()
     End With
 End Sub
 
-
-
-' --------------------------------------------------------------------------
-' Step 6c: Build Audit Log Sheet (Prevent Lazy Loading)
-' --------------------------------------------------------------------------
-Private Sub BuildAuditLogSheet()
-    Dim ws As Worksheet
-    ' Check if exists first (it shouldn't in a clean build, but good practice)
-    On Error Resume Next
-    Set ws = ThisWorkbook.Sheets("AuditLog")
-    On Error GoTo 0
-    
-    If ws Is Nothing Then
-        Set ws = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-        ws.Name = "AuditLog"
-    End If
-    
-    With ws
-        .Cells.Clear
-        .Cells(1, 1).Value = "Timestamp"
-        .Cells(1, 2).Value = "Action"
-        .Cells(1, 3).Value = "Details"
-        .Cells(1, 4).Value = "User"
-        
-        .Range("A1:D1").Font.Bold = True
-        .Range("A1:D1").Interior.Color = RGB(240, 240, 240)
-        
-        .Columns("A:A").ColumnWidth = 20
-        .Columns("B:B").ColumnWidth = 25
-        .Columns("C:C").ColumnWidth = 50
-        .Columns("D:D").ColumnWidth = 15
-        
-        ' Keep Visible as per user request
-        .Visible = xlSheetVisible
-        ' Let's NOT hide it yet, just creating it prevents the Activate issue.
-    End With
-End Sub
-
 ' --------------------------------------------------------------------------
 ' Step 7: Build Invoice Template
 ' --------------------------------------------------------------------------
@@ -745,13 +701,9 @@ Private Sub BuildInvoiceTemplate()
             .TopMargin = Application.InchesToPoints(0.5)
             .BottomMargin = Application.InchesToPoints(0.5)
             .PrintArea = "A1:H40"
-            .Zoom = False ' Critical for FitToPages
             .FitToPagesWide = 1
             .FitToPagesTall = 1
-            .CenterHorizontally = True
-            .PrintGridlines = False
         End With
-
         On Error GoTo 0
     End With
 End Sub
@@ -801,12 +753,6 @@ Private Sub BuildReceiptTemplate()
         .Range("A11").Value = "Customer:"
         .Range("A12").Value = "Tax ID:"
         .Range("A8:A12").Font.Bold = True
-        
-        ' Force Left Alignment for values
-        .Range("B8:B12").HorizontalAlignment = xlLeft
-        .Range("B9").NumberFormat = "dd/mm/yyyy" ' Explicit Date Format
-
-
 
         ' Payment details header (row 14)
         .Range("A14:F14").Merge
@@ -826,9 +772,8 @@ Private Sub BuildReceiptTemplate()
         .Range("A16:A20").Font.Bold = True
 
         .Range("B20").Formula = "=B16-B17"
+        .Range("B20").Formula = "=B16-B17"
         .Range("B16:B20").NumberFormat = "[$KES] #,##0.00"
-        .Range("B16:B20").HorizontalAlignment = xlLeft
-
 
         ' Add borders to payment details
         With .Range("A16:B20")
@@ -837,29 +782,13 @@ Private Sub BuildReceiptTemplate()
         End With
 
         ' Footer (rows 22-24)
-        .Range("A22").Value = "Received by:"
-        .Range("B22").Borders(xlEdgeBottom).LineStyle = xlContinuous
-        .Range("B22").HorizontalAlignment = xlLeft
-        
-        .Range("D22").Value = "Date:"
-        .Range("E22").Borders(xlEdgeBottom).LineStyle = xlContinuous
-        .Range("E22").HorizontalAlignment = xlLeft
-        .Range("E22").NumberFormat = "dd/mm/yyyy" ' Explicit Date Format
-
-
+        .Range("A22").Value = "Received by: _______________"
+        .Range("D22").Value = "Date: _______________"
         .Range("A24:F24").Merge
         .Range("A24").Value = "This is a computer-generated receipt."
         .Range("A24").HorizontalAlignment = xlCenter
         .Range("A24").Font.Italic = True
         .Range("A24").Font.Size = 8
-
-        ' Balanced Column Widths (Total ~80 for A4)
-        .Columns("A:A").ColumnWidth = 25  ' Label
-        .Columns("B:B").ColumnWidth = 25  ' Value
-        .Columns("C:F").ColumnWidth = 10  ' Spacing
-
-
-
 
         ' Print setup
         On Error Resume Next
@@ -871,15 +800,9 @@ Private Sub BuildReceiptTemplate()
             .TopMargin = Application.InchesToPoints(0.5)
             .BottomMargin = Application.InchesToPoints(0.5)
             .PrintArea = "A1:F24"
-            .Zoom = False ' Critical for FitToPages
             .FitToPagesWide = 1
             .FitToPagesTall = 1
-            .CenterHorizontally = True
-            .CenterVertically = True
-            .PrintGridlines = False
         End With
-
-
         On Error GoTo 0
     End With
 End Sub
@@ -903,9 +826,9 @@ Private Sub BuildETRTemplate()
     On Error GoTo ETRError
     
     etrStep = "Column widths"
-    ws.Columns("A:A").ColumnWidth = 18
-    ws.Columns("B:B").ColumnWidth = 18
-    ws.Columns("C:C").ColumnWidth = 18
+    ws.Columns("A:A").ColumnWidth = 15
+    ws.Columns("B:B").ColumnWidth = 15
+    ws.Columns("C:C").ColumnWidth = 15
     
     etrStep = "Format C as Currency"
     ws.Columns("C:C").NumberFormat = "[$KES] #,##0.00"
@@ -1033,13 +956,7 @@ Private Sub BuildETRTemplate()
         .TopMargin = Application.InchesToPoints(0.2)
         .BottomMargin = Application.InchesToPoints(0.2)
         .PrintArea = "A1:C44"
-        .Zoom = False
-        .FitToPagesWide = 1
-        .FitToPagesTall = 1
-        .CenterHorizontally = True
-        .PrintGridlines = False
     End With
-
     On Error GoTo 0
     Exit Sub
 
@@ -1128,7 +1045,7 @@ Private Sub BuildDashboardSheet()
         On Error GoTo 0
 
         ' Set column widths
-        .Columns("A:J").ColumnWidth = 14
+        .Columns("A:J").ColumnWidth = 12
 
         ' Header banner (rows 1-3)
         .Range("A1:J3").Merge
@@ -1280,7 +1197,6 @@ Private Sub CreateAllNamedRanges()
     AddNamedRange "rngYearPrefix", "=Settings!$B$29"
     AddNamedRange "rngPaymentMethods", "=Settings!$A$32:$A$44"
     AddNamedRange "rngPaymentTerms", "=Settings!$B$46"
-    AddNamedRange "rngDefaultCashier", "=Settings!$B$50"
 
     ' Invoice Template ranges
     AddNamedRange "rngInvNumber", "=Invoice_Template!$B$8"
@@ -1480,61 +1396,4 @@ Private Sub InjectSheetCode()
                             "End Sub"
         End If
     End With
-
-    ' 4. Inject Customers Double-Click
-    Set ws = ThisWorkbook.Sheets("Customers")
-    modName = ws.CodeName
-    If modName = "" Then
-        For Each comp In vbProj.VBComponents
-            If comp.Properties("Name").Value = "Customers" Then
-                modName = comp.Name
-                Exit For
-            End If
-        Next comp
-    End If
-    
-    If modName <> "" Then
-        With vbProj.VBComponents(modName).CodeModule
-             ' Check if DoubleClick exists, if not add it
-            Dim codeStr As String
-            codeStr = "Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)" & vbCrLf & _
-                      "    On Error Resume Next" & vbCrLf & _
-                      "    If Not Intersect(Target, Me.Range(""A2:L2000"")) Is Nothing Then" & vbCrLf & _
-                      "        Cancel = True" & vbCrLf & _
-                      "        modCustomer.SelectCustomerFromSheet Target.Row" & vbCrLf & _
-                      "    End If" & vbCrLf & _
-                      "End Sub"
-            
-            ' Append if not exists (simple check)
-            If .CountOfLines < 10 Then .AddFromString codeStr
-        End With
-    End If
-    
-    ' 5. Inject Products Double-Click
-    Set ws = ThisWorkbook.Sheets("Products")
-    modName = ws.CodeName
-    If modName = "" Then
-        For Each comp In vbProj.VBComponents
-            If comp.Properties("Name").Value = "Products" Then
-                modName = comp.Name
-                Exit For
-            End If
-        Next comp
-    End If
-    
-    If modName <> "" Then
-        With vbProj.VBComponents(modName).CodeModule
-            ' Check if DoubleClick exists, if not add it
-            codeStr = "Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)" & vbCrLf & _
-                      "    On Error Resume Next" & vbCrLf & _
-                      "    If Not Intersect(Target, Me.Range(""A2:H2000"")) Is Nothing Then" & vbCrLf & _
-                      "        Cancel = True" & vbCrLf & _
-                      "        modProduct.SelectProductFromSheet Target.Row" & vbCrLf & _
-                      "    End If" & vbCrLf & _
-                      "End Sub"
-            
-            If .CountOfLines < 10 Then .AddFromString codeStr
-        End With
-    End If
-
 End Sub

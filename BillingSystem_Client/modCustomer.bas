@@ -11,7 +11,6 @@ Option Explicit
 ' ==============================================================================
 
 Public g_selectedCustomerID As String
-Public g_selectingForInvoice As Boolean
 
 ' --------------------------------------------------------------------------
 ' LookupCustomer — Search by ID or Name using direct cell refs
@@ -151,36 +150,12 @@ Public Function ValidateCustomerTaxID(taxID As String, jurisdiction As String) A
 End Function
 
 ' --------------------------------------------------------------------------
-' ShowCustomerSelector - USES SEARCHABLE USERFORM
+' ShowCustomerSelector
 ' --------------------------------------------------------------------------
 Public Sub ShowCustomerSelector()
     On Error GoTo ErrHandler
-    
-    Dim col As Collection
-    Set col = modCustomer.ListActiveCustomers()
-    
-    Dim result As String
-    result = modFormBuilder.ShowSelectionDialog("Select Customer", col)
-    
-    If result <> "" Then
-        ' Result format "ID - Name"
-        ' Extract ID
-        Dim parts() As String
-        parts = Split(result, " - ")
-        g_selectedCustomerID = parts(0)
-    Else
-        g_selectedCustomerID = ""
-    End If
+    g_selectedCustomerID = modForms.ShowCustomerPicker()
     Exit Sub
 ErrHandler:
     ErrorHandler "ShowCustomerSelector", Err.Number, Err.Description
-End Sub
-
-' Duplicate ListActiveCustomers removed
-
-' --------------------------------------------------------------------------
-' SelectCustomerFromSheet - Deprecated but kept for safety
-' --------------------------------------------------------------------------
-Public Sub SelectCustomerFromSheet(row As Long)
-    ' No op or fallback
 End Sub

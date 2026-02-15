@@ -264,9 +264,6 @@ Public Sub UpdateLogo(ws As Worksheet)
     
     ' NEW: Fix Visual Glitch - Ensure clean view state
     On Error Resume Next
-    Application.ScreenUpdating = True ' Force redraw
-    DoEvents ' Allow Excel to process UI
-    ws.Activate
     If ActiveWindow.View <> xlNormalView Then ActiveWindow.View = xlNormalView
     ActiveWindow.ScrollRow = 1
     ActiveWindow.ScrollColumn = 1
@@ -279,6 +276,8 @@ Public Sub UpdateLogo(ws As Worksheet)
     picPath = Replace(picPath, """", "")
     picPath = Trim(picPath)
     
+    ' Log what we found
+    modUtilities.AuditLog "UPDATE_LOGO", "Path=" & picPath
     
     ' Remove old logo
     Dim shp As Shape
@@ -286,22 +285,23 @@ Public Sub UpdateLogo(ws As Worksheet)
         If shp.Name = "CompanyLogo" Then shp.Delete
     Next shp
     
-    ' Target correct logo area (A1:C5 is merged in template)
-    Dim logoRange As Range
-    Set logoRange = ws.Range("A1:C5")
-
     If picPath = "" Then
         modUtilities.ProtectSheet ws.Name
         Exit Sub
     End If
     
     If Dir(picPath) = "" Then
-        ' Silently fail or log to AuditLog if called from event
-        modUtilities.AuditLog "LOGO_ERROR", "File not found: " & picPath
-        logoRange.Value = "[Logo Not Found]"
+        MsgBox "Warning: Logo file not found at:" & vbCrLf & picPath & vbCrLf & vbCrLf & _
+               "Please check the path in Settings.", vbExclamation, "Logo Error"
         modUtilities.ProtectSheet ws.Name
         Exit Sub
     End If
+    
+    ' ... (Previous code for getting path and removing old logo) ...
+    
+    ' Target correct logo area (A1:C5 is merged in template)
+    Dim logoRange As Range
+    Set logoRange = ws.Range("A1:C5")
     
     ' Use AddPicture
     Dim p As Shape
